@@ -1,12 +1,13 @@
 const connection = require("../../config/mysql");
 
 module.exports = {
-  getCountVehicle: (typeId) =>
+  getCountVehicle: (filter) =>
     new Promise((resolve, reject) => {
       connection.query(
         `SELECT COUNT(*) AS total from pricelist 
         JOIN vehicle_model as vm on pricelist.model_id = vm.id 
-        JOIN vehicle_type as vt on vm.type_id = vt.id WHERE vt.id = ${typeId}`,
+        JOIN vehicle_type as vt on vm.type_id = vt.id
+        JOIN vehicle_brand as vb on vt.brand_id=vb.id ${filter}`,
         (error, result) => {
           if (!error) {
             resolve(result[0].total);
@@ -18,14 +19,14 @@ module.exports = {
       );
     }),
 
-  getAllVehicle: (limit, offset, type_id, model_id, brand_id) =>
+  getAllVehicle: (limit, offset, filter) =>
     new Promise((resolve, reject) => {
       connection.query(
         `SELECT pl.id,pl.code,pl.price,vm.name as Model,
         vt.name as Type,vb.name as Brand FROM pricelist AS pl 
         JOIN vehicle_model as vm on pl.model_id = vm.id 
         JOIN vehicle_type as vt on vm.type_id=vt.id 
-        JOIN vehicle_brand as vb on vt.brand_id = vb.id  WHERE vb.id = ${type_id}
+        JOIN vehicle_brand as vb on vt.brand_id = vb.id ${filter}
         LIMIT ? OFFSET ?`,
         [limit, offset],
         (error, result) => {
@@ -40,16 +41,20 @@ module.exports = {
       );
     }),
 
-  getVehicleByID: (id) =>
+  getVehicleById: (id) =>
     new Promise((resolve, reject) => {
-      connection.query(`SELECT * FROM movie WHERE ID = ?`, id, (err, res) => {
-        if (!err) {
-          resolve(res);
-        } else {
-          console.log(err.sqlMessage);
-          reject(new Error(err.sqlMessage));
+      connection.query(
+        `SELECT * FROM pricelist WHERE ID = ?`,
+        id,
+        (err, res) => {
+          if (!err) {
+            resolve(res);
+          } else {
+            console.log(err.sqlMessage);
+            reject(new Error(err.sqlMessage));
+          }
         }
-      });
+      );
     }),
 
   getVehicleByCode: (code) =>

@@ -4,12 +4,24 @@ const vehicleModel = require("./vehicleModel");
 module.exports = {
   getAllVehicle: async (req, res) => {
     try {
-      let { type_id, page, limit, model_id, brand_id } = req.query;
+      let { type_id, page, limit, brand_id } = req.query;
       page = Number(page);
       limit = Number(limit);
       type_id = Number(type_id);
       const offset = page * limit - limit;
-      const totalData = await vehicleModel.getCountVehicle(type_id);
+      let filter = "";
+
+      if (type_id && brand_id) {
+        filter = `WHERE vt.id = ${type_id} AND vb.id = ${brand_id}`;
+      } else if (type_id && !brand_id) {
+        filter = `WHERE vt.id = ${type_id}`;
+      } else if (!type_id && brand_id) {
+        filter = `WHERE vb.id = ${brand_id}`;
+      } else {
+        filter = "";
+      }
+
+      const totalData = await vehicleModel.getCountVehicle(filter);
       const totalPage = Math.ceil(totalData / limit);
 
       const pageInfo = {
@@ -19,13 +31,7 @@ module.exports = {
         totalData,
       };
 
-      const result = await vehicleModel.getAllVehicle(
-        limit,
-        offset,
-        type_id,
-        1,
-        1
-      );
+      const result = await vehicleModel.getAllVehicle(limit, offset, filter);
       return helperWrapper.response(
         res,
         200,
@@ -33,6 +39,16 @@ module.exports = {
         result,
         pageInfo
       );
+    } catch (error) {
+      console.log(error);
+      return helperWrapper.response(res, 400, "bad request", null);
+    }
+  },
+  getVehicleById: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await vehicleModel.getVehicleById(id);
+      return helperWrapper.response(res, 200, "success get brand", result);
     } catch (error) {
       console.log(error);
       return helperWrapper.response(res, 400, "bad request", null);
