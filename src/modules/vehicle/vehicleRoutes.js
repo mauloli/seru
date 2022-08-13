@@ -6,6 +6,7 @@ const middlewareAuth = require("../../middleware/auth");
 
 Router.get("/", vehicleController.getAllVehicle);
 Router.get("/:id", vehicleController.getVehicleById);
+Router.get("/model/:id", vehicleController.getVehicleByModel);
 
 Router.post("/", middlewareAuth.isAdmin, vehicleController.createVehicle);
 Router.post("/brand", middlewareAuth.isAdmin, vehicleController.createBrand);

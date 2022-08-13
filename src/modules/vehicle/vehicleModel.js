@@ -7,7 +7,8 @@ module.exports = {
         `SELECT COUNT(*) AS total from pricelist 
         JOIN vehicle_model as vm on pricelist.model_id = vm.id 
         JOIN vehicle_type as vt on vm.type_id = vt.id
-        JOIN vehicle_brand as vb on vt.brand_id=vb.id ${filter}`,
+        JOIN vehicle_brand as vb on vt.brand_id=vb.id 
+        JOIN vehicle_year as vy on pricelist.year_id = vy.id ${filter}`,
         (error, result) => {
           if (!error) {
             resolve(result[0].total);
@@ -21,12 +22,13 @@ module.exports = {
 
   getAllVehicle: (limit, offset, filter) =>
     new Promise((resolve, reject) => {
-      connection.query(
+      const query = connection.query(
         `SELECT pl.id,pl.code,pl.price,vm.name as Model,
-        vt.name as Type,vb.name as Brand FROM pricelist AS pl 
+        vt.name as Type,vb.name as Brand,vy.year FROM pricelist AS pl 
         JOIN vehicle_model as vm on pl.model_id = vm.id 
         JOIN vehicle_type as vt on vm.type_id=vt.id 
-        JOIN vehicle_brand as vb on vt.brand_id = vb.id ${filter}
+        JOIN vehicle_brand as vb on vt.brand_id = vb.id
+        JOIN vehicle_year as vy on vy.id = pl.year_id ${filter}
         LIMIT ? OFFSET ?`,
         [limit, offset],
         (error, result) => {
@@ -39,12 +41,58 @@ module.exports = {
           }
         }
       );
+      console.log(query.sql);
     }),
 
   getVehicleById: (id) =>
     new Promise((resolve, reject) => {
       connection.query(
-        `SELECT * FROM pricelist WHERE ID = ?`,
+        `SELECT pl.id,pl.code,pl.price,vm.name as Model,
+        vt.name as Type,vb.name as Brand FROM pricelist AS pl 
+        JOIN vehicle_model as vm on pl.model_id = vm.id 
+        JOIN vehicle_type as vt on vm.type_id=vt.id 
+        JOIN vehicle_brand as vb on vt.brand_id = vb.id WHERE pl.id = ?`,
+        id,
+        (err, res) => {
+          if (!err) {
+            resolve(res);
+          } else {
+            console.log(err.sqlMessage);
+            reject(new Error(err.sqlMessage));
+          }
+        }
+      );
+    }),
+  getVehicleByYear: (id) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `SELECT pl.id,pl.code,pl.price,vm.name as Model,
+        vt.name as Type,vb.name as Brand,vy.year as Year FROM pricelist AS pl 
+        JOIN vehicle_model as vm on pl.model_id = vm.id 
+        JOIN vehicle_type as vt on vm.type_id=vt.id 
+        JOIN vehicle_brand as vb on vt.brand_id = vb.id
+        JOIN vehicle_year as vy on pl.year_id = vy.id WHERE vy.id = ?`,
+        id,
+        (err, res) => {
+          if (!err) {
+            resolve(res);
+          } else {
+            console.log(err.sqlMessage);
+            reject(new Error(err.sqlMessage));
+          }
+        }
+      );
+    }),
+
+  getVehicleByModel: (id) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `SELECT pl.id,pl.code,pl.price,vm.name as Model,
+        vt.name as Type,vb.name as Brand,vy.year as Year FROM pricelist AS pl 
+        JOIN vehicle_model as vm on pl.model_id = vm.id 
+        JOIN vehicle_type as vt on vm.type_id=vt.id 
+        JOIN vehicle_brand as vb on vt.brand_id = vb.id
+        JOIN vehicle_year as vy on pl.year_id = vy.id WHERE vm.id = ?`,
         id,
         (err, res) => {
           if (!err) {
@@ -62,6 +110,66 @@ module.exports = {
       connection.query(
         `SELECT * FROM pricelist WHERE code = ?`,
         code,
+        (err, res) => {
+          if (!err) {
+            resolve(res);
+          } else {
+            console.log(err.sqlMessage);
+            reject(new Error(err.sqlMessage));
+          }
+        }
+      );
+    }),
+  getYear: (year) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `SELECT * FROM vehicle_year WHERE year = ?`,
+        year,
+        (err, res) => {
+          if (!err) {
+            resolve(res);
+          } else {
+            console.log(err.sqlMessage);
+            reject(new Error(err.sqlMessage));
+          }
+        }
+      );
+    }),
+  getBrand: (name) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `SELECT * FROM vehicle_brand WHERE name = ?`,
+        name,
+        (err, res) => {
+          if (!err) {
+            resolve(res);
+          } else {
+            console.log(err.sqlMessage);
+            reject(new Error(err.sqlMessage));
+          }
+        }
+      );
+    }),
+  getType: (name, brand_id) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `SELECT * FROM vehicle_type WHERE name LIKE '%${name}%' AND brand_id = ?`,
+        brand_id,
+        (err, res) => {
+          if (!err) {
+            resolve(res);
+          } else {
+            console.log(err.sqlMessage);
+            reject(new Error(err.sqlMessage));
+          }
+        }
+      );
+    }),
+  getModel: (name, type_id) =>
+    new Promise((resolve, reject) => {
+      connection.query(
+        `SELECT * FROM vehicle_model WHERE name LIKE '%${name}%' AND type_id = ?`,
+        type_id,
         (err, res) => {
           if (!err) {
             resolve(res);
